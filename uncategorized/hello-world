@@ -13,7 +13,7 @@
         <link rel="icon" href="http://yoursite.com/assets/images/favicon.ico">
     
     
-    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"vita2333_瓶子","sameAs":["https://github.com/","http://stackoverflow.com/users","mailto"],"image":"avatar.jpeg"},"articleBody":"Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.\nQuick StartCreate a new post1$ hexo new \"My New Post\"\n\nMore info: Writing\nRun server1$ hexo server\n\nMore info: Server\nGenerate static files1$ hexo generate\n\nMore info: Generating\nDeploy to remote sites1$ hexo deploy\n\nMore info: Deployment\n","dateCreated":"2019-08-11T17:17:08+08:00","dateModified":"2019-08-11T17:17:08+08:00","datePublished":"2019-08-11T17:17:08+08:00","description":"","headline":"Hello World","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"http://yoursite.com/uncategorized/hello-world"},"publisher":{"@type":"Organization","name":"vita2333_瓶子","sameAs":["https://github.com/","http://stackoverflow.com/users","mailto"],"image":"avatar.jpeg","logo":{"@type":"ImageObject","url":"avatar.jpeg"}},"url":"http://yoursite.com/uncategorized/hello-world"}</script>
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"vita2333_瓶子","sameAs":["https://github.com/","http://stackoverflow.com/users","mailto"],"image":"avatar.jpeg"},"articleBody":"Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.\nQuick StartCreate a new post1$ hexo new \"My New Post\"\n\nMore info: Writing\nRun server1$ hexo server\n\nMore info: Server\nGenerate static files1$ hexo generate\n\nMore info: Generating\nDeploy to remote sites1$ hexo deploy\n\nMore info: Deployment\n","dateCreated":"2019-08-11T17:19:45+08:00","dateModified":"2019-08-11T17:19:45+08:00","datePublished":"2019-08-11T17:19:45+08:00","description":"","headline":"Hello World","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"http://yoursite.com/uncategorized/hello-world"},"publisher":{"@type":"Organization","name":"vita2333_瓶子","sameAs":["https://github.com/","http://stackoverflow.com/users","mailto"],"image":"avatar.jpeg","logo":{"@type":"ImageObject","url":"avatar.jpeg"}},"url":"http://yoursite.com/uncategorized/hello-world"}</script>
     <meta name="description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick">
 <meta property="og:type" content="blog">
 <meta property="og:title" content="Hello World">
@@ -21,7 +21,7 @@
 <meta property="og:site_name" content="vita2333_瓶子的博客">
 <meta property="og:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick">
 <meta property="og:locale" content="zh-cn">
-<meta property="og:updated_time" content="2019-08-11T09:17:08.405Z">
+<meta property="og:updated_time" content="2019-08-11T09:19:45.024Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Hello World">
 <meta name="twitter:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick">
@@ -43,6 +43,8 @@
     
 
     
+        
+            <link rel="stylesheet" href="/blog/assets/css/gitalk.css">
         
     
 </head>
@@ -249,7 +251,7 @@
     
     
         <div class="post-meta">
-    <time datetime="2019-08-11T17:17:08+08:00">
+    <time datetime="2019-08-11T17:19:45+08:00">
 	
 		    8月 11, 2019
     	
@@ -364,6 +366,16 @@
         
         
             
+                <li class="post-action">
+                    <a
+                        class="post-action-btn btn btn--default"
+                        href="#gitalk"
+                        aria-label="Kommentieren"
+                    >
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
         
         <li class="post-action">
             
@@ -378,6 +390,9 @@
 
         
         
+            
+                <div id="gitalk"></div>
+
             
         
     </div>
@@ -472,6 +487,16 @@
             </li>
         
         
+            
+                <li class="post-action">
+                    <a
+                        class="post-action-btn btn btn--default"
+                        href="#gitalk"
+                        aria-label="Kommentieren"
+                    >
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
             
         
         <li class="post-action">
@@ -582,6 +607,21 @@
 <!--SCRIPTS END-->
 
 
+    
+        <script src="/blog/assets/js/gitalk.js"></script>
+        <script type="text/javascript">
+          (function() {
+            new Gitalk({
+              clientID: 'ca0ae3fa5900e09acc8c',
+              clientSecret: '1c71520672a1e81df386ac04ec67a8fe8b7fe679',
+              repo: 'blog',
+              owner: 'vita2333',
+              admin: ['vita2333'],
+              id: 'uncategorized/hello-world',
+              ...{"language":"zh-cn","perPage":10,"distractionFreeMode":false,"enableHotKey":true,"pagerDirection":"first"}
+            }).render('gitalk')
+          })()
+        </script>
     
 
 
