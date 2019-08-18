@@ -251,6 +251,73 @@
                     
                         <a
                             class="link-unstyled"
+                            href="/blog/code/more-efficient-code-structure/"
+                            aria-label=": web开发MVC结构扩展，更加合理的代码分层"
+                        >
+                            web开发MVC结构扩展，更加合理的代码分层
+                        </a>
+                    
+                </h1>
+                <div class="postShorten-meta">
+    <time datetime="2019-08-18T10:00:07+08:00">
+	
+		    8月 18, 2019
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/blog/categories/code/">code</a>
+
+
+    
+</div>
+
+            </div>
+            
+                <div class="postShorten-excerpt">
+                    <h2 id="传统MVC存在的问题"><a href="#传统MVC存在的问题" class="headerlink" title="传统MVC存在的问题"></a>传统MVC存在的问题</h2><p>web开发中MVC已经是一个常见的结构了，然而对于稍微复杂的项目还是有一些问题：</p>
+<ol>
+<li>业务代码写在model层，导致model越来越臃肿，新旧业务、不同场景杂糅，越来越难以维护。                         </li>
+<li>复杂业务同时设计多个model（多张表），到底应该放在哪个model里？         </li>
+<li>网上有的说MVC导致代码难以测试什么的，其实并不是这样，代码写在model里和写在service里都是可以单元测试的。这里主要还是写在model里太臃肿的问题（第1点）</li>
+<li>代码复用的问题。<br>一般model都是orm映射数据库的，所以在这里写完的代码是直接进出数据库的。那么问题来了，如果我在不同的场景对数据进行不同处理呢？比如：自己可以看自己的手机号，别人看到的是加密后的手机号。为了安全问题，需要在后端就加密好再传到前端，那么这个加密我就只能写在controller里。那么需要在另一个接口看到自己的手机号呢？是不是得再写一遍？当然这只是一个很简单的场景，有更好的例子欢迎补充。</li>
+</ol>
+                    
+                        <a
+                            href="/blog/code/more-efficient-code-structure/"
+                            class="postShorten-excerpt_link link"
+                            aria-label=": web开发MVC结构扩展，更加合理的代码分层"
+                        >
+                            阅读全文
+                        </a>
+                        
+                    
+                </div>
+            
+        </div>
+        
+            <a
+                href="/blog/code/more-efficient-code-structure/"
+                aria-label=": web开发MVC结构扩展，更加合理的代码分层"
+            >
+                <div class="postShorten-thumbnailimg">
+                    <img alt="" src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=crop&amp;w=1650&amp;q=80"/>
+                </div>
+            </a>
+            
+        
+    </article>
+    
+    
+    <article class="postShorten postShorten--thumbnailimg-right">
+        <div class="postShorten-wrap">
+            
+            <div class="postShorten-header">
+                <h1 class="postShorten-title">
+                    
+                        <a
+                            class="link-unstyled"
                             href="/blog/other/why-and-how-to-write-blog/"
                             aria-label=": 为什么要写博客？怎么写博客？"
                         >

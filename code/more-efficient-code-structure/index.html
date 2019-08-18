@@ -1,0 +1,691 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="vita2333_瓶子的博客">
+    <title>web开发MVC结构扩展，更加合理的代码分层 - vita2333_瓶子的博客</title>
+    <meta name="author" content="vita2333_瓶子">
+    
+    
+        <link rel="icon" href="https://vita2333.github.io/blog/assets/images/favicon.ico">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"vita2333_瓶子","sameAs":["https://github.com/","http://stackoverflow.com/users","mailto"],"image":"avatar.jpeg"},"articleBody":"传统MVC存在的问题web开发中MVC已经是一个常见的结构了，然而对于稍微复杂的项目还是有一些问题：\n\n业务代码写在model层，导致model越来越臃肿，新旧业务、不同场景杂糅，越来越难以维护。                         \n复杂业务同时设计多个model（多张表），到底应该放在哪个model里？         \n网上有的说MVC导致代码难以测试什么的，其实并不是这样，代码写在model里和写在service里都是可以单元测试的。这里主要还是写在model里太臃肿的问题（第1点）\n代码复用的问题。一般model都是orm映射数据库的，所以在这里写完的代码是直接进出数据库的。那么问题来了，如果我在不同的场景对数据进行不同处理呢？比如：自己可以看自己的手机号，别人看到的是加密后的手机号。为了安全问题，需要在后端就加密好再传到前端，那么这个加密我就只能写在controller里。那么需要在另一个接口看到自己的手机号呢？是不是得再写一遍？当然这只是一个很简单的场景，有更好的例子欢迎补充。\n\n\n更合理的代码分层接下来说说为了解决上面的问题，我个人在代码结构上总结的方法：通过添加service层、repository模式、transform层，结合原有的MVC，来保障代码的复用、隔离、稳定、可测。下面按照重要性倒序介绍~\n1.【必须】MVC这里重新界定一下：\n\ncontroller层用于接收用户数据、进行简单的数据处理。至于数据校验，有的框架在controller里，比如laravel的表单验证，而yii2是直接将验证规则放在了model里，所以不一概而论。\nmodel层不再写任何业务逻辑，仅作为数据库访问层（DAO）使用，包括：\n数据表字段映射\n数据表关联关系映射\n\n\n\n2.【必须】service业务层这个service不是框架中抽象的service（不是service provider的service，也不是service locator的service），而是指实际业务的那个service。比如，处理订单的业务层，就是OrderService.service层用于写业务逻辑，比如电商网站下订单功能，本质上就是订单表增加一条数据，然而业务上却连接着库存、购物车、销量等等等等。这种涉及了多表操作的，单独放在哪个表里都不合适。那么就放在service层，在OrderService中写一个createOrder()方法，保证所有的下单操作都调用这个方法即可。        \n3.【推荐】repository查询层这一层封装了查询数据的方法，介于model和controller中间，使用repository封装好常用的查询，会让controller感觉不到model的存在。使用前：查询时经常要select字段，或者做字段判断，用字符串手写，但是字符串这个东西，用起来一时爽，重构火葬场。当我需要修改某字段或修改查询条件时，只能全文ctrl f + 人工识别，对着自己写的一行行代码无语凝噎。使用后：因为提前封装在了repository层，所以之后查询、select用这一层的方法，重构就根本不是问题。当然了,如果项目或者功能比较简单，没有太大的必要用这一层.\n4.【推荐】transform层这一层主要是对model层取出的数据做一些转换，controller调用repository层获得原始数据库数据，再交给transform层根据业务要求转换数据。\n关于过度设计这个问题还是要回到实际项目来说，如果是简单的项目，MVC就足够了，但是如果是电商类复杂一些的项目，做更合理的代码分层是非常必要的。首先，这种设计能够应对所有复杂情况，其次，每层的职责分明，就算是刚上手项目的程序员了解了也能够快速掌握。否则把所有业务揉在一坨if else里，读起来就像拆积木，维护的难度更大。\n这样的优点\n代码可测部分更全面，写完了心里更有底现在的代码结构除了controller都可以测试，当然不必每个都写单元测试，但是针对一些复杂的情况，比如搜索附近的美食信息这个功能，是关键字搜索+距离排序，我就为repository层对应的方法写一个测试实例，就算以后业务变动也能够保障这个方法没有问题。         \n代码结构更加清晰，职责更加单一。面向对象开发的原则之一就是职责单一，一个类只负责一个职责。想象有一天，产品经理突发奇想让你开发一个奇葩的新功能，这时候，有两个选择在你面前：1.把这些奇葩功能继续放在之前的类里，让它们和正常功能傻傻分不清楚；2.建一个QiPaService专门做这些需求，等到产品经理清醒过来，一键delete就完事。          \n把更多的注意力关注在业务实现上，而不是怎么代码怎么写上。脱离实际业务谈开发等同于纸上谈兵，学会了《电商开发》课程实际上手时也还是会遇到问题，因为业务一直有新的需求，功能也需要迭代。所以我们的重点就是把业务封装在service这个黑盒里，在快速开发阶段也不必太过纠结service实现的是否完美，等到项目稳定的时候再来进行优化重构即可（然而大多数功能听不到优化就删改了）。\n\n这样的缺点虽然我自己一直在用这一套代码结构，但是我还是不得不承认它的一些问题：              \n\n降低性能（虽然在我看来可以忽略不计）       \n代码结构复杂，代码工作量大写得代码越多就越累，也越容易犯错，想象我们每写一个功能都要建一个controller、一个model、一个repostiroy、一个transform、一个service是一种什么样的体验？我个人很讨厌重复无意义的事情，所以在经历了一段时间上述的折磨后，我找到了很好的解决方案，将在下一篇介绍下我的独（tou）家（lan）方法~            \n\n最后,文中涉及的内容都是我的个人总结，可能会有一些问题，欢迎交流指正！\n","dateCreated":"2019-08-18T10:00:07+08:00","dateModified":"2019-08-18T10:32:39+08:00","datePublished":"2019-08-18T10:00:07+08:00","description":"传统MVC存在的问题web开发中MVC已经是一个常见的结构了，然而对于稍微复杂的项目还是有一些问题：\n\n业务代码写在model层，导致model越来越臃肿，新旧业务、不同场景杂糅，越来越难以维护。                         \n复杂业务同时设计多个model（多张表），到底应该放在哪个model里？         \n网上有的说MVC导致代码难以测试什么的，其实并不是这样，代码写在model里和写在service里都是可以单元测试的。这里主要还是写在model里太臃肿的问题（第1点）\n代码复用的问题。一般model都是orm映射数据库的，所以在这里写完的代码是直接进出数据库的。那么问题来了，如果我在不同的场景对数据进行不同处理呢？比如：自己可以看自己的手机号，别人看到的是加密后的手机号。为了安全问题，需要在后端就加密好再传到前端，那么这个加密我就只能写在controller里。那么需要在另一个接口看到自己的手机号呢？是不是得再写一遍？当然这只是一个很简单的场景，有更好的例子欢迎补充。\n","headline":"web开发MVC结构扩展，更加合理的代码分层","image":[null,"https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1650&q=80"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://vita2333.github.io/blog/code/more-efficient-code-structure/"},"publisher":{"@type":"Organization","name":"vita2333_瓶子","sameAs":["https://github.com/","http://stackoverflow.com/users","mailto"],"image":"avatar.jpeg","logo":{"@type":"ImageObject","url":"avatar.jpeg"}},"url":"https://vita2333.github.io/blog/code/more-efficient-code-structure/","keywords":"code","thumbnailUrl":"https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1650&q=80"}</script>
+    <meta name="description" content="传统MVC存在的问题web开发中MVC已经是一个常见的结构了，然而对于稍微复杂的项目还是有一些问题：  业务代码写在model层，导致model越来越臃肿，新旧业务、不同场景杂糅，越来越难以维护。                          复杂业务同时设计多个model（多张表），到底应该放在哪个model里？          网上有的说MVC导致代码难以测试什么的，其实并不是这样，代码">
+<meta name="keywords" content="code">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="web开发MVC结构扩展，更加合理的代码分层">
+<meta property="og:url" content="https://vita2333.github.io/blog/code/more-efficient-code-structure/index.html">
+<meta property="og:site_name" content="vita2333_瓶子的博客">
+<meta property="og:description" content="传统MVC存在的问题web开发中MVC已经是一个常见的结构了，然而对于稍微复杂的项目还是有一些问题：  业务代码写在model层，导致model越来越臃肿，新旧业务、不同场景杂糅，越来越难以维护。                          复杂业务同时设计多个model（多张表），到底应该放在哪个model里？          网上有的说MVC导致代码难以测试什么的，其实并不是这样，代码">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:updated_time" content="2019-08-18T02:32:39.581Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="web开发MVC结构扩展，更加合理的代码分层">
+<meta name="twitter:description" content="传统MVC存在的问题web开发中MVC已经是一个常见的结构了，然而对于稍微复杂的项目还是有一些问题：  业务代码写在model层，导致model越来越臃肿，新旧业务、不同场景杂糅，越来越难以维护。                          复杂业务同时设计多个model（多张表），到底应该放在哪个model里？          网上有的说MVC导致代码难以测试什么的，其实并不是这样，代码">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://vita2333.github.io/blog/assets/images/avatar.jpeg"/>
+    
+    
+    
+        <meta property="og:image" content="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=crop&amp;w=1650&amp;q=80"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=crop&amp;w=1650&amp;q=80"/>
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="/blog/assets/css/style-csnpqcymydjnusx41pxqzj5nrxsvi4mlsaqghcfe6moz6djmwnkw71t2xbhj.min.css">
+    <!--STYLES END-->
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-137955276-2"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-137955276-2');
+    </script>
+
+
+    
+
+    
+        
+            <link rel="stylesheet" href="/blog/assets/css/gitalk.css">
+        
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="4">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a
+            class="header-title-link"
+            href="/blog/ "
+            aria-label=""
+        >
+            vita2333_瓶子的博客
+        </a>
+    </div>
+    
+        
+            <a
+                class="header-right-picture "
+                href="#about"
+                aria-label="打开链接: /blog/#about"
+            >
+        
+        
+            <img class="header-picture" src="/blog/assets/images/avatar.jpeg" alt="作者的图片"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="4">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a
+                    href="/blog/#about"
+                    aria-label="阅读有关作者的更多信息"
+                >
+                    <img class="sidebar-profile-picture" src="/blog/assets/images/avatar.jpeg" alt="作者的图片"/>
+                </a>
+                <h4 class="sidebar-profile-name">vita2333_瓶子</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>Hello world !</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="/blog/ "
+                            
+                            title="首页"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">首页</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="/blog/all-categories"
+                            
+                            title="分类"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-bookmark" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">分类</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="/blog/all-tags"
+                            
+                            title="标签"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">标签</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="/blog/all-archives"
+                            
+                            title="归档"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">归档</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="关于"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-question" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">关于</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="https://github.com/" target="_blank" rel="noopener" title="GitHub">
+                    
+                        <i class="sidebar-button-icon fab fa-github" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">GitHub</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="http://stackoverflow.com/users" target="_blank" rel="noopener" title="Stack Overflow">
+                    
+                        <i class="sidebar-button-icon fab fa-stack-overflow" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Stack Overflow</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="/blog/mailto"
+                            title="邮箱"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">邮箱</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="/blog/atom.xml"
+                            
+                            title="RSS"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-rss" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">RSS</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--partial"
+             style="background-image:url('https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=crop&amp;w=1650&amp;q=80');"
+             data-behavior="4">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            web开发MVC结构扩展，更加合理的代码分层
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-08-18T10:00:07+08:00">
+	
+		    8月 18, 2019
+    	
+    </time>
+    
+        <span>发布在 </span>
+        
+    <a class="category-link" href="/blog/categories/code/">code</a>
+
+
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="4"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <h2 id="传统MVC存在的问题"><a href="#传统MVC存在的问题" class="headerlink" title="传统MVC存在的问题"></a>传统MVC存在的问题</h2><p>web开发中MVC已经是一个常见的结构了，然而对于稍微复杂的项目还是有一些问题：</p>
+<ol>
+<li>业务代码写在model层，导致model越来越臃肿，新旧业务、不同场景杂糅，越来越难以维护。                         </li>
+<li>复杂业务同时设计多个model（多张表），到底应该放在哪个model里？         </li>
+<li>网上有的说MVC导致代码难以测试什么的，其实并不是这样，代码写在model里和写在service里都是可以单元测试的。这里主要还是写在model里太臃肿的问题（第1点）</li>
+<li>代码复用的问题。<br>一般model都是orm映射数据库的，所以在这里写完的代码是直接进出数据库的。那么问题来了，如果我在不同的场景对数据进行不同处理呢？比如：自己可以看自己的手机号，别人看到的是加密后的手机号。为了安全问题，需要在后端就加密好再传到前端，那么这个加密我就只能写在controller里。那么需要在另一个接口看到自己的手机号呢？是不是得再写一遍？当然这只是一个很简单的场景，有更好的例子欢迎补充。</li>
+</ol>
+<a id="more"></a>
+<h2 id="更合理的代码分层"><a href="#更合理的代码分层" class="headerlink" title="更合理的代码分层"></a>更合理的代码分层</h2><p>接下来说说为了解决上面的问题，我个人在代码结构上总结的方法：<br><strong>通过添加service层、<a href="https://www.cnblogs.com/dudu/archive/2011/05/25/repository_pattern.html" target="_blank" rel="noopener">repository模式</a>、transform层，结合原有的MVC，来保障代码的复用、隔离、稳定、可测</strong>。<br>下面按照重要性倒序介绍~</p>
+<h3 id="1-【必须】MVC"><a href="#1-【必须】MVC" class="headerlink" title="1.【必须】MVC"></a>1.【必须】MVC</h3><p>这里重新界定一下：</p>
+<ul>
+<li>controller层用于接收用户数据、进行简单的数据处理。至于数据校验，有的框架在controller里，比如laravel的<a href="https://learnku.com/docs/laravel/5.7/validation/2262" target="_blank" rel="noopener">表单验证</a>，而yii2是直接将<a href="https://www.yiiframework.com/doc/guide/2.0/zh-cn/input-validation" target="_blank" rel="noopener">验证规则</a>放在了model里，所以不一概而论。</li>
+<li>model层不再写任何业务逻辑，仅作为数据库访问层（DAO）使用，包括：<ol>
+<li>数据表字段映射</li>
+<li>数据表关联关系映射</li>
+</ol>
+</li>
+</ul>
+<h3 id="2-【必须】service业务层"><a href="#2-【必须】service业务层" class="headerlink" title="2.【必须】service业务层"></a>2.【必须】service业务层</h3><p>这个service不是框架中抽象的service（不是<a href="https://learnku.com/docs/laravel/5.7/providers/2250" target="_blank" rel="noopener">service provider</a>的service，也不是<a href="https://www.yiiframework.com/doc/guide/2.0/zh-cn/concept-service-locator" target="_blank" rel="noopener">service locator</a>的service），而是指实际业务的那个service。比如，处理订单的业务层，就是OrderService.<br>service层用于写业务逻辑，比如电商网站下订单功能，本质上就是订单表增加一条数据，然而业务上却连接着库存、购物车、销量等等等等。这种涉及了多表操作的，单独放在哪个表里都不合适。那么就放在service层，在OrderService中写一个createOrder()方法，保证所有的下单操作都调用这个方法即可。        </p>
+<h3 id="3-【推荐】repository查询层"><a href="#3-【推荐】repository查询层" class="headerlink" title="3.【推荐】repository查询层"></a>3.【推荐】repository查询层</h3><p>这一层封装了查询数据的方法，介于model和controller中间，使用repository封装好常用的查询，会让controller感觉不到model的存在。<br>使用前：查询时经常要select字段，或者做字段判断，用字符串手写，但是字符串这个东西，用起来一时爽，重构火葬场。当我需要修改某字段或修改查询条件时，只能全文ctrl f + 人工识别，对着自己写的一行行代码无语凝噎。<br>使用后：因为提前封装在了repository层，所以之后查询、select用这一层的方法，重构就根本不是问题。<br>当然了,如果项目或者功能比较简单，没有太大的必要用这一层.</p>
+<h3 id="4-【推荐】transform层"><a href="#4-【推荐】transform层" class="headerlink" title="4.【推荐】transform层"></a>4.【推荐】transform层</h3><p>这一层主要是对model层取出的数据做一些转换，controller调用repository层获得原始数据库数据，再交给transform层根据业务要求转换数据。</p>
+<h2 id="关于过度设计"><a href="#关于过度设计" class="headerlink" title="关于过度设计"></a>关于过度设计</h2><p>这个问题还是要回到实际项目来说，如果是简单的项目，MVC就足够了，但是如果是电商类复杂一些的项目，做更合理的代码分层是非常必要的。<br>首先，这种设计能够应对所有复杂情况，其次，每层的职责分明，就算是刚上手项目的程序员了解了也能够快速掌握。否则把所有业务揉在一坨if else里，读起来就像拆积木，维护的难度更大。</p>
+<h2 id="这样的优点"><a href="#这样的优点" class="headerlink" title="这样的优点"></a>这样的优点</h2><ol>
+<li>代码可测部分更全面，写完了心里更有底<br>现在的代码结构除了controller都可以测试，当然不必每个都写单元测试，但是针对一些复杂的情况，比如搜索附近的美食信息这个功能，是关键字搜索+距离排序，我就为repository层对应的方法写一个测试实例，就算以后业务变动也能够保障这个方法没有问题。         </li>
+<li>代码结构更加清晰，职责更加单一。<br>面向对象开发的原则之一就是<a href="https://zh.wikipedia.org/wiki/%E5%8D%95%E4%B8%80%E5%8A%9F%E8%83%BD%E5%8E%9F%E5%88%99" target="_blank" rel="noopener">职责单一</a>，一个类只负责一个职责。<br>想象有一天，产品经理突发奇想让你开发一个奇葩的新功能，这时候，有两个选择在你面前：1.把这些奇葩功能继续放在之前的类里，让它们和正常功能傻傻分不清楚；2.建一个QiPaService专门做这些需求，等到产品经理清醒过来，一键delete就完事。          </li>
+<li>把更多的注意力关注在业务实现上，而不是怎么代码怎么写上。<br>脱离实际业务谈开发等同于纸上谈兵，学会了《电商开发》课程实际上手时也还是会遇到问题，因为业务一直有新的需求，功能也需要迭代。所以我们的重点就是把业务封装在service这个黑盒里，在快速开发阶段也不必太过纠结service实现的是否完美，等到项目稳定的时候再来进行优化重构即可（然而大多数功能听不到优化就删改了）。</li>
+</ol>
+<h2 id="这样的缺点"><a href="#这样的缺点" class="headerlink" title="这样的缺点"></a>这样的缺点</h2><p>虽然我自己一直在用这一套代码结构，但是我还是不得不承认它的一些问题：              </p>
+<ol>
+<li>降低性能（虽然在我看来可以忽略不计）       </li>
+<li>代码结构复杂，代码工作量大<br>写得代码越多就越累，也越容易犯错，想象我们每写一个功能都要建一个controller、一个model、一个repostiroy、一个transform、一个service是一种什么样的体验？<br>我个人很讨厌重复无意义的事情，所以在经历了一段时间上述的折磨后，我找到了很好的解决方案，将在下一篇介绍下我的独（tou）家（lan）方法~            </li>
+</ol>
+<p>最后,文中涉及的内容都是我的个人总结，可能会有一些问题，欢迎交流指正！</p>
+
+            
+
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">标签</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="/blog/tags/code/">code</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a
+                        class="post-action-btn btn btn--disabled"
+                        aria-hidden="true"
+                    >
+                        
+                        <i class="fa fa-angle-left" aria-hidden="true"></i>
+                        <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                    </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                <a
+                    class="post-action-btn btn btn--default tooltip--top"
+                    href="/blog/other/why-and-how-to-write-blog/"
+                    data-tooltip="为什么要写博客？怎么写博客？"
+                    aria-label="下一篇: 为什么要写博客？怎么写博客？"
+                >
+                    
+                        <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                        <i class="fa fa-angle-right" aria-hidden="true"></i>
+                    </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a
+                class="post-action-btn btn btn--default btn-open-shareoptions"
+                href="#btn-open-shareoptions"
+                aria-label="Diesen Beitrag teilen"
+            >
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a
+                    class="post-action-btn btn btn--default"
+                    target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://vita2333.github.io/blog/code/more-efficient-code-structure/"
+                    title="分享到 Qzone"
+                    aria-label="分享到 Qzone"
+                >
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a
+                    class="post-action-btn btn btn--default"
+                    target="new" href="http://connect.qq.com/widget/shareqq/index.html?url=https://vita2333.github.io/blog/code/more-efficient-code-structure/&amp;title=web开发MVC结构扩展，更加合理的代码分层"
+                    title="分享到 QQ"
+                    aria-label="分享到 QQ"
+                >
+                    <i class="fab fa-qq" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a
+                    class="post-action-btn btn btn--default"
+                    target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://vita2333.github.io/blog/code/more-efficient-code-structure/"
+                    title="分享到 Weibo"
+                    aria-label="分享到 Weibo"
+                >
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a
+                        class="post-action-btn btn btn--default"
+                        href="#gitalk"
+                        aria-label="Kommentieren"
+                    >
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Nach oben">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="gitalk"></div>
+
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 vita2333_瓶子. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="4">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    <a
+                        class="post-action-btn btn btn--disabled"
+                        aria-hidden="true"
+                    >
+                        
+                        <i class="fa fa-angle-left" aria-hidden="true"></i>
+                        <span class="hide-xs hide-sm text-small icon-ml">上一篇</span>
+                    </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                <a
+                    class="post-action-btn btn btn--default tooltip--top"
+                    href="/blog/other/why-and-how-to-write-blog/"
+                    data-tooltip="为什么要写博客？怎么写博客？"
+                    aria-label="下一篇: 为什么要写博客？怎么写博客？"
+                >
+                    
+                        <span class="hide-xs hide-sm text-small icon-mr">下一篇</span>
+                        <i class="fa fa-angle-right" aria-hidden="true"></i>
+                    </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a
+                class="post-action-btn btn btn--default btn-open-shareoptions"
+                href="#btn-open-shareoptions"
+                aria-label="Diesen Beitrag teilen"
+            >
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a
+                    class="post-action-btn btn btn--default"
+                    target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://vita2333.github.io/blog/code/more-efficient-code-structure/"
+                    title="分享到 Qzone"
+                    aria-label="分享到 Qzone"
+                >
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a
+                    class="post-action-btn btn btn--default"
+                    target="new" href="http://connect.qq.com/widget/shareqq/index.html?url=https://vita2333.github.io/blog/code/more-efficient-code-structure/&amp;title=web开发MVC结构扩展，更加合理的代码分层"
+                    title="分享到 QQ"
+                    aria-label="分享到 QQ"
+                >
+                    <i class="fab fa-qq" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a
+                    class="post-action-btn btn btn--default"
+                    target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://vita2333.github.io/blog/code/more-efficient-code-structure/"
+                    title="分享到 Weibo"
+                    aria-label="分享到 Weibo"
+                >
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a
+                        class="post-action-btn btn btn--default"
+                        href="#gitalk"
+                        aria-label="Kommentieren"
+                    >
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Nach oben">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                
+    <div id="share-options-bar" class="share-options-bar" data-behavior="4">
+        <i id="btn-close-shareoptions" class="fa fa-times"></i>
+        <ul class="share-options">
+            
+                
+                
+                <li class="share-option">
+                    <a
+                        class="share-option-btn"
+                        target="new"
+                        href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://vita2333.github.io/blog/code/more-efficient-code-structure/"
+                        aria-label="分享到 Qzone"
+                    >
+                        <i class="fa fa-star" aria-hidden="true"></i><span>分享到 Qzone</span>
+                    </a>
+                </li>
+            
+                
+                
+                <li class="share-option">
+                    <a
+                        class="share-option-btn"
+                        target="new"
+                        href="http://connect.qq.com/widget/shareqq/index.html?url=https://vita2333.github.io/blog/code/more-efficient-code-structure/&amp;title=web开发MVC结构扩展，更加合理的代码分层"
+                        aria-label="分享到 QQ"
+                    >
+                        <i class="fab fa-qq" aria-hidden="true"></i><span>分享到 QQ</span>
+                    </a>
+                </li>
+            
+                
+                
+                <li class="share-option">
+                    <a
+                        class="share-option-btn"
+                        target="new"
+                        href="http://service.weibo.com/share/share.php?&amp;title=https://vita2333.github.io/blog/code/more-efficient-code-structure/"
+                        aria-label="分享到 Weibo"
+                    >
+                        <i class="fab fa-weibo" aria-hidden="true"></i><span>分享到 Weibo</span>
+                    </a>
+                </li>
+            
+        </ul>
+    </div>
+
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="/blog/assets/images/avatar.jpeg" alt="作者的图片"/>
+        
+            <h4 id="about-card-name">vita2333_瓶子</h4>
+        
+            <div id="about-card-bio"><p>Hello world !</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>程序媛</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                中国 内蒙古
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('/blog/assets/images/cover.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="/blog/assets/js/script-f1pqkldquz3yzompuzcun8l6pm0jm7hi3t5iiiesldfhfhmjd4wbnhdqgce4.min.js"></script>
+<!--SCRIPTS END-->
+
+
+    
+        <script src="/blog/assets/js/gitalk.js"></script>
+        <script type="text/javascript">
+          (function() {
+            new Gitalk({
+              clientID: 'ca0ae3fa5900e09acc8c',
+              clientSecret: '1c71520672a1e81df386ac04ec67a8fe8b7fe679',
+              repo: 'blog',
+              owner: 'vita2333',
+              admin: ['vita2333'],
+              id: 'code/more-efficient-code-structure/',
+              ...{"language":"zh-CN","perPage":10,"distractionFreeMode":false,"enableHotKey":true,"pagerDirection":"first"}
+            }).render('gitalk')
+          })()
+        </script>
+    
+
+
+
+
+    </body>
+</html>
