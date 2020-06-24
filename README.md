@@ -1,1 +1,1 @@
-### vita2333's blog [website](https://www.vita2333.com)
+### vita2333's blog [website](https://vita2333.github.io/blog/)

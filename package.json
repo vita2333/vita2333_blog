@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "description": "vita2333's blog",
   "main": "index.js",
-  "repository": "http://vita2333.gitlab.io",
+  "repository": "https://github.com/vita2333/blog",
   "author": "vita2333",
   "license": "MIT",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vuepress dev docs",
-    "build": "vuepress build docs"
+    "build": "vuepress build docs",
+    "deploy": "git subtree push --prefix public origin gh-pages"
   },
   "dependencies": {
     "vuepress": "1.0.3",
