@@ -16,7 +16,7 @@ module.exports = {
   // 作者
   author: 'vita2333',
   // 备案号
-  record: '京ICP备17067634号-1',
+  // record: '京ICP备17067634号-1',
   // 项目开始时间
-  startYear: '2017'
+  startYear: '2020'
 }

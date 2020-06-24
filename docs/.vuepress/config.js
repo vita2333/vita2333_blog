@@ -1,7 +1,7 @@
 const themeConfig = require('./config/theme/')
 
 module.exports = {
-  title: "Vita2333",
+  title: "Vita2333's Blog",
   description: 'Enjoy when you can, and endure when you must.',
   base: '/blog/',
   dest: 'public',
