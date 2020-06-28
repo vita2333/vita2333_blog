@@ -12,15 +12,12 @@ categories:
 :::tip 组件介绍
 此次封装的是vue+高德地图amap2.0组件         
 项目见[此处](https://github.com/vita2333/vmap)           
-参考了[vue-amap](https://github.com/ElemeFE/vue-amap) (该项目只支持JS API 1.x版本)
 :::
 
 每次写业务代码麻溜溜的，想不到封装个组件会这么懵逼。好不容易都解决了，趁热打铁记录一下解决的方案。那么，都在哪些方面遇到问题呢?
 1. vue全局api的使用
 2. 异步组件的封装与测试
 3. 打包配置
-4. 文档编写， vuepress的使用/部署
-
 
 <!-- more -->
 
@@ -102,14 +99,81 @@ map.on('complete', function(){
   }
 ```
 
-### `Vm.$watch()`
+### `Vm.$watch()`实现数据绑定
+前面通过`$attrs`实现了配置项的传递，在地图初始化时将`$attrs`作为参数传入到了`new AMap.Map()`中，实现了地图的初始化参数设置。可是这些参数并不一定是不变的，比如：用户缩放地图大小(zoom值)，这时候就需要调用`map.setZoom()`改变地图的zoom值。
 
+官方写法：
+```javascript
+map.setZoom(10)
+```
+通过`$watch()`转换
+```javascript
+export default {
+  mounted(){
+    const unwatchFn = this.$watch(() => {
+      return this.$attrs.zoom
+    }, (now) => {
+      this.mapComponent.setZoom(now)
+    })
+    // destory时解除watch
+    this.$once('hook:destroy', () => {
+      unwatchFn()
+    })
+  }
+}
+```
+这样当`<vmap :zoom="zoom">`中zoom发生改变，就可以控制地图的缩放了。
 
 ## 异步组件的封装与测试
-异步组件可以通过`Promise`来封装
+### 异步加载第三方Api
 
+### 父子组件的异步参数通信
+父子组件的通信，有三种方式：
+1. prop
+2. vm.$parent 和 vm.$children
+3. provide 和 inject
+这里我们父子组件如下：
+```vue
+<vmap>
+    <vmap-marker></vmap-marker>
+    <vmap-auto-complete></vmap-auto-complete>
+    <vmap-xxx></vmap-xxx>
+</vmap>
+```
+所有地图子组件需要接收`<vmap>`的`map`，才能进行后续的处理。考虑到方便性和灵活性，这里采用第三种`provide`和`inject`方法。**因为`provide`不是响应式的，所以传递的必须是异步函数。**
+```javascript
+export default {
+    name:'Vmap',
+    mounted(){
+      AMapLoader.load().then(AMap=>{
+        this.map = new AMap.Map(this.$attrs)  
+      })
+    },
+    provide(){
+      getMap: this.getMap
+    }
+}
+```
+`getMap()`可以通过`Promise`封装：
+```javascript
+    async function getMap() {
+      return new Promise((resolve, reject) => {
+        function checkForMap() {
+          if (this.map) resolve(this.map)
+          else setTimeout(checkForMap, 50)
+        }
 
-也可以转换思路，巧妙利用callback来处理异步更新
+        checkForMap()
+      })
+    }
+```
+子组件调用
+```javascript
+    this.getMap().then(map=>{
+      
+    })
+```
+也可以转换思路，利用callback来处理异步更新：
 ```javascript
    function getMap(callback) {
         const checkForMap = () => {
@@ -123,8 +187,15 @@ map.on('complete', function(){
         checkForMap()
    }
 ```
+子组件调用
+```javascript
+    this.getMap(map=>{
+    
+    })
+```
 
-异步组件测试， 通过`simple-mock`mock异步操作
+### 异步组件测试
+通过`simple-mock`mock异步操作
 ```javascript
 simple.mock(localVue.prototype,'$amapLoader',() => Promise.resolve(mockAMap))
 ```
@@ -136,48 +207,38 @@ async()=>{ await Promise() }
 await flushPromises()
 ```
 
-
-
-
-## 开发踩坑
-
-设置全局变量
+## 打包配置
+通过`vue cli3`的`build`命令来打包
+`build/build-libs-js`：
 ```javascript
-global.AMap=xxx
+const { run } = require('runjs')
+const glob = require('glob')
+
+const list = {}
+
+glob.sync('./packages/*.*').forEach(path => {
+  const chunk = path.split('packages/')[1].split('/index')[0]
+
+  list[chunk] = {
+    input: `packages/${ chunk }`,
+    output: chunk.split('.')[0],
+  }
+})
+
+Object.keys(list).forEach(i => {
+  const { input, output } = list[i]
+  run(
+    `vue-cli-service build  --target lib --no-clean  --name ${ output } --dest lib ${ input }`,
+  )
+})
+```
+`package.json`:
+```json
+  "scripts": {
+    "libs:build": "node ./build/build-libs.js",
+  }
 ```
 
-利用hook事件钩子将事件监听和销毁放在一起，增加代码可读性
-```javascript
-export default {
-    mounted(){
-        this.map=xxxx
-    },
-    destroyed(){
-        this.map.destroy()
-    }
-}
-```
-替换为
-```javascript
-export default {
-    mounted(){
-        this.map=xxxx
-        this.$once('hook:destroyed',()=>{
-              this.map.destroy()
-        })
-    },
-}
-```
-
-函数式组件
-```javascript
-export default { 
-    functional: true
-}
-```
-或者
-```html
-<template functional>
-    <div>xxxxx</div>
-</template>
-```
+:::tip 项目参考
+[vue-amap](https://github.com/ElemeFE/vue-amap) 
+:::
