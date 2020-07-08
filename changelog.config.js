@@ -83,6 +83,4 @@ module.exports = {
       'value': 'test',
     },
   },
-  allowCustomScopes: true,
-  allowBreakingChanges: ['feat', 'fix'],
 }
