@@ -1,5 +1,5 @@
 {
-  "name": "afternoon-grocery-store",
+  "name": "@vita2333/blog",
   "version": "1.0.0",
   "description": "vita2333's blog",
   "main": "index.js",
@@ -10,6 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vuepress dev docs",
     "build": "vuepress build docs",
+    "commit": "git add . && git-cz",
     "deploy": "git subtree push --prefix public origin gh-pages"
   },
   "dependencies": {
@@ -18,5 +19,8 @@
     "vuepress": "1.0.3",
     "vuepress-plugin-flowchart": "1.4.3",
     "vuepress-theme-reco": "^1.5.3"
+  },
+  "devDependencies": {
+    "lerna": "^3.21.0"
   }
 }
