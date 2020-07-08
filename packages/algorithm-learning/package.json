@@ -25,5 +25,12 @@
   },
   "bugs": {
     "url": "https://github.com/vita2333/blog/issues"
+  },
+  "gitHead": "937d34f77d5e76a8a0f54bafdaa1c7213cba1193",
+  "devDependencies": {
+    "@types/jest": "^26.0.3",
+    "jest": "^26.1.0",
+    "ts-jest": "^26.1.1",
+    "typescript": "^3.9.5"
   }
 }
