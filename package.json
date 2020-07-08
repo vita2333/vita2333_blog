@@ -13,10 +13,10 @@
     "deploy": "git subtree push --prefix public origin gh-pages"
   },
   "dependencies": {
-    "vuepress": "1.0.3",
-    "vuepress-theme-reco": "git+ssh://git@github.com:vita2333/vuepress-theme-reco.git#^1.4.8",
     "@vuepress/plugin-medium-zoom": "1.0.0-alpha.0",
+    "@vuepress/plugin-pwa": "1.0.0-alpha.3",
+    "vuepress": "1.0.3",
     "vuepress-plugin-flowchart": "1.4.3",
-    "@vuepress/plugin-pwa": "1.0.0-alpha.3"
+    "vuepress-theme-reco": "^1.5.3"
   }
 }
