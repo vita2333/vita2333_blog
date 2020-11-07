@@ -6,7 +6,7 @@ tags:
  - vue
  - vmap
 categories: 
- - 前端
+ - frontend
 ---
 
 :::tip 组件介绍
